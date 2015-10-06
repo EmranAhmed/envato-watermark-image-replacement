@@ -66,8 +66,7 @@
 				</div>
 				<div class="form-group">
 					<div class="col-sm-offset-3 col-sm-9">
-						<button type="submit" class="btn btn-primary btn-lg download-btn">Replace and Download
-						</button>
+						<button type="submit" class="btn btn-primary btn-lg download-btn">Replace and Download</button>
 					</div>
 				</div>
 			</form> <!-- #process-form -->

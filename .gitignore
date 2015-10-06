@@ -1,0 +1,14 @@
+.idea
+*.zip
+._*
+process/*
+!process/index.html
+.htaccess
+.DS_Store
+.DS_Store?
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.log
+bs-config.js

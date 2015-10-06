@@ -8,13 +8,12 @@
 		die;
 	}
 
-
 	header( "Pragma: public" );
 	header( "Expires: 0" );
 	header( "Cache-Control: must-revalidate, post-check=0, pre-check=0" );
 	header( "Cache-Control: private", FALSE );
 	header( 'Content-type: application/zip' );
-	header( 'Content-Disposition: attachment; filename="replaced_' . $image_zip_name . '.zip"' );
+	header( 'Content-Disposition: attachment; filename="replaced_' . $image_zip_name . '"' );
 	readfile( $make_zip_name );
 	// remove zip file from temp path
 	unlink( $make_zip_name );

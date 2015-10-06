@@ -23,6 +23,7 @@
 		private $_image_type;
 		private $_image_mime;
 		private $_blank_image;
+		private $input_image;
 
 		public function __construct( $watermark_image, $input_image ) {
 
@@ -30,6 +31,95 @@
 			$this->_real_img_rs       = $this->_getImageResource( $input_image );
 			$this->_mod_img_rs        = $this->_getImageResource( $input_image, TRUE );
 			$this->_file_name         = basename( $input_image );
+			$this->input_image        = $input_image;
+
+		}
+
+		private function _getImageResource( $image_file, $save = FALSE ) {
+
+			$image_info = getImageSize( $image_file );
+
+			if ( $save ) {
+				$this->_image_mime = $image_info[ 'mime' ];
+			}
+
+			switch ( $image_info[ 'mime' ] ) {
+
+				case 'image/gif':
+
+					if ( $save ) {
+						$this->_image_type = 'gif';
+					}
+
+					$img_rs = imageCreateFromGIF( $image_file );
+					break;
+
+				case 'image/jpeg':
+					if ( $save ) {
+						$this->_image_type = 'jpeg';
+					}
+
+					$img_rs = imageCreateFromJPEG( $image_file );
+					break;
+
+				case 'image/png':
+					if ( $save ) {
+						$this->_image_type = 'png';
+					}
+
+					$img_rs = imageCreateFromPNG( $image_file );
+
+					imageAlphaBlending( $img_rs, TRUE );
+					imageSaveAlpha( $img_rs, TRUE );
+					break;
+			}
+
+			return $img_rs;
+		}
+
+		public function Generate( $save_path = FALSE ) {
+
+
+			$this->_image_width  = imagesx( $this->_mod_img_rs );
+			$this->_image_height = imagesy( $this->_mod_img_rs );
+
+			$this->_watermark_width  = imagesx( $this->_water_mark_img_rs );
+			$this->_watermark_height = imagesy( $this->_water_mark_img_rs );
+
+			$this->_makeFullWatermarked();
+
+			$fn = 'image' . $this->_image_type;
+
+			if ( $this->_image_type == 'png' ) {
+
+				$this->_makeTransparentImage();
+
+				if ( $save_path ) {
+					$fn( $this->_blank_image, $save_path . $this->_file_name );
+				} else {
+					header( "Content-type: " . $this->_image_mime );
+					$fn( $this->_blank_image );
+				}
+				imageDestroy( $this->_blank_image );
+
+
+			} else {
+
+				if ( $save_path ) {
+					$fn( $this->_mod_img_rs, $save_path . $this->_file_name );
+					imageDestroy( $this->_mod_img_rs );
+				} else {
+					header( "Content-type: " . $this->_image_mime );
+					$fn( $this->_mod_img_rs );
+					imageDestroy( $this->_mod_img_rs );
+				}
+			}
+
+			if ( $save_path ) {
+				return $save_path . $this->_file_name;
+			} else {
+				return TRUE;
+			}
 
 
 		}
@@ -78,95 +168,6 @@
 				}
 			}
 
-		}
-
-		public function Generate( $save_path = FALSE ) {
-
-
-			$this->_image_width  = imagesx( $this->_mod_img_rs );
-			$this->_image_height = imagesy( $this->_mod_img_rs );
-
-			$this->_watermark_width  = imagesx( $this->_water_mark_img_rs );
-			$this->_watermark_height = imagesy( $this->_water_mark_img_rs );
-
-			$this->_makeFullWatermarked();
-
-			$fn = 'image' . $this->_image_type;
-
-			if ( $this->_image_type == 'png' ) {
-
-				$this->_makeTransparentImage();
-
-				if ( $save_path ) {
-					$fn( $this->_blank_image, $save_path . $this->_file_name );
-				} else {
-					header( "Content-type: " . $this->_image_mime );
-					$fn( $this->_blank_image );
-				}
-				imageDestroy( $this->_blank_image );
-
-
-			} else {
-
-				if ( $save_path ) {
-					$fn( $this->_mod_img_rs, $save_path . $this->_file_name );
-					imageDestroy( $this->_mod_img_rs );
-				} else {
-					header( "Content-type: " . $this->_image_mime );
-					$fn( $this->_mod_img_rs );
-					imageDestroy( $this->_mod_img_rs );
-				}
-			}
-
-			if ( $save_path ) {
-				return $this->_file_name;
-			} else {
-				return TRUE;
-			}
-
-
-		}
-
-		private function _getImageResource( $image_file, $save = FALSE ) {
-
-			$image_info = getImageSize( $image_file );
-
-			if ( $save ) {
-				$this->_image_mime = $image_info[ 'mime' ];
-			}
-
-			switch ( $image_info[ 'mime' ] ) {
-
-				case 'image/gif':
-
-					if ( $save ) {
-						$this->_image_type = 'gif';
-					}
-
-					$img_rs = imageCreateFromGIF( $image_file );
-					break;
-
-				case 'image/jpeg':
-					if ( $save ) {
-						$this->_image_type = 'jpeg';
-					}
-
-					$img_rs = imageCreateFromJPEG( $image_file );
-					break;
-
-				case 'image/png':
-					if ( $save ) {
-						$this->_image_type = 'png';
-					}
-
-					$img_rs = imageCreateFromPNG( $image_file );
-
-					imageAlphaBlending( $img_rs, TRUE );
-					imageSaveAlpha( $img_rs, TRUE );
-					break;
-			}
-
-			return $img_rs;
 		}
 	}
 

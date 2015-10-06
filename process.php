@@ -7,15 +7,15 @@
 	require_once "dummy_Image_Replacement.php";
 
 
-	$process_dir    = "process";
-	$id             = uniqid();
-	$user_dir       = $process_dir . '/' . $id;
-	$extract_dir    = $process_dir . '/' . $id . '/extract';
-	$gen_dir        = $process_dir . '/' . $id . '/generated';
-	$watermark_name = 'watermark-' . $id;
+	$process_dir          = "process";
+	$id                   = uniqid();
+	$user_dir             = $process_dir . '/' . $id;
+	$extract_dir          = $process_dir . '/' . $id . '/extract';
+	$gen_dir              = $process_dir . '/' . $id . '/generated';
+	$watermark_name       = 'watermark-' . $id;
+	$supported_extensions = array( 'jpg', 'jpeg', 'gif', 'png' );
 
 	function getFileExtension( $file_name ) {
-
 		$file_part = pathinfo( strtolower( $file_name ) );
 
 		return $file_part[ 'extension' ];
@@ -57,20 +57,38 @@
 		$res = $zip->open( $image_zip_path );
 		if ( $res === TRUE ) {
 			$zip->extractTo( $extract_dir );
+			$zip->extractTo( $gen_dir );
 			$zip->close();
 		} else {
 			die( "Cannot open zip file" );
 		}
 
 
-		$files = glob( "{$extract_dir}/*.{jpg,jpeg,gif,png}", GLOB_BRACE );
+		removeDir( $extract_dir . '/__MACOSX' );
 
+
+		$iterator = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $extract_dir ), RecursiveIteratorIterator::SELF_FIRST );
 
 		$make_zip      = new ZipArchive;
 		$make_zip_name = $user_dir . "." . $image_zip_ext;
 
 		if ( $make_zip->open( $make_zip_name, ZIPARCHIVE::CREATE | ZIPARCHIVE::OVERWRITE ) !== TRUE ) {
-			die( "* Sorry ZIP creation failed at this time" );
+			die( "* Sorry ZIP creation failed at this time." );
+		}
+
+		foreach ( $iterator as $path ) {
+
+			if ( $path->isDir() and $path->isReadable() and ! in_array( $path->getFilename(), array(
+					'.',
+					'..'
+				) )
+			) {
+				$make_zip->addEmptyDir( str_ireplace( $extract_dir . '/', '', $path->__toString() . '/' ) );
+			}
+
+			if ( $path->isFile() and $path->isReadable() and in_array( $path->getExtension(), $supported_extensions ) ) {
+				$files[] = $path->__toString();
+			}
 		}
 
 
@@ -79,8 +97,10 @@
 
 		foreach ( $files as $file ) {
 
-			$replace     = new \Dummy_Image_Replacement( $watermark_path, $file );
-			$replaced[ ] = $replace->Generate( "{$gen_dir}/" );
+			$save_path = str_ireplace( $extract_dir, $gen_dir, dirname( $file ) );
+
+			$replace    = new \Dummy_Image_Replacement( $watermark_path, $file );
+			$replaced[] = $replace->Generate( "{$save_path}/" );
 
 			$progress = round( ( count( $replaced ) / $total ) * 100 );
 
@@ -91,28 +111,21 @@
 		}
 
 
-		//echo getcwd();
-
 		chdir( $gen_dir );
 
-		// echo getcwd(); die;
 
 		foreach ( $replaced as $file ) {
-			$make_zip->addFile( $file );
+			$make_zip->addFile( str_ireplace( $gen_dir . '/', '', $file ) );
 		}
 
 		chdir( "../../../" );
 
-		// echo getcwd(); die;
-
+		$make_zip->setArchiveComment( 'Image Replace Github: https://github.com/EmranAhmed/envato-watermark-image-replacement' );
 
 		$make_zip->close();
 
-
 		removeDir( $user_dir );
 
-
-		echo "<script> window.location.replace('makendownload.php?name={$image_zip_base_name}&id={$id}') </script>";
-
+		echo "<script>window.location.replace('makendownload.php?name={$image_zip_base_name}&id={$id}');</script>";
 
 	}
