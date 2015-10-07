@@ -23,6 +23,11 @@
 
 
 	function removeDir( $dir ) {
+
+		if( !file_exists($dir) ){
+			return false;
+		}
+
 		$files = array_diff( scandir( $dir ), array( '.', '..' ) );
 		foreach ( $files as $file ) {
 			( is_dir( "$dir/$file" ) && ! is_link( $dir ) ) ? removeDir( "$dir/$file" ) : unlink( "$dir/$file" );
@@ -104,7 +109,7 @@
 
 			$progress = round( ( count( $replaced ) / $total ) * 100 );
 
-			echo "<script> $('.progress-bar').css('width', '{$progress}%').text('{$progress}%').attr('aria-valuenow', '{$progress}'); </script>";
+			echo "<script> btn.button('loading'); can_close = false; progress = {$progress}; $('.progress-bar').css('width', '{$progress}%').text('{$progress}%').attr('aria-valuenow', '{$progress}'); </script>";
 
 			ob_flush();
 			flush();
@@ -126,6 +131,8 @@
 
 		removeDir( $user_dir );
 
-		echo "<script>window.location.replace('makendownload.php?name={$image_zip_base_name}&id={$id}');</script>";
+		echo "<script>if( progress==100 ){  btn.button('reset'); can_close=true;  window.location.replace('makendownload.php?name={$image_zip_base_name}&id={$id}');}</script>";
 
+		ob_flush();
+		flush();
 	}
